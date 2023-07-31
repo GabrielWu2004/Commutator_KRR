@@ -72,6 +72,28 @@ def KRR_commutator_with_eig(X_train,Y_train,X_test,best_params,kernel='rbf',dist
             k=covariance(dist2,kernel,params)
             return np.dot(k.T,alpha)
 
+def KRR_eig(X_train,Y_train,X_test,best_params,kernel='rbf',dist1='na',dist2='na'):
+    lam = best_params['lambda']
+    params = best_params
+    if type(dist1)==str:
+        dist1=p_distance_eigval_batch(X_train, X_train)
+    K=covariance(dist1,kernel,params)
+    K+=(np.eye(K.shape[0])*lam)
+    try:
+        L=np.linalg.cholesky(K)
+    except:
+        return 'Gram Matrix is not positive definite'
+    else:
+        try:
+            alpha=cho_solve((L,True),Y_train)
+        except:
+            return 'Cholesky decomposition failed, check distance matrices'
+        else:
+            if type(dist2)==str:
+                dist2=p_distance_eigval_batch(X_train, X_test)
+            k=covariance(dist2,kernel,params)
+            return np.dot(k.T,alpha)
+
 @numba.jit(nopython=True)
 def generate_CM(cood,charges,pad):
     size=len(charges)
